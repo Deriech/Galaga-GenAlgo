@@ -9,8 +9,43 @@ import neat
 import visualize
 
 # 2-input XOR inputs and expected outputs.
-xor_inputs = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)]
-xor_outputs = [(0.0,), (1.0,), (1.0,), (0.0,)]
+MAX_SCORE = 99999
+MAX_TIME= 254
+MAX_ACCURACY = 1
+
+SCORE_WEIGHT = .3
+TIME_WEIGHT  = .45
+ACCURACY_WEIGHT = .25
+
+def to_int(lst):
+    idx = 0
+    ret = 0
+    for x in lst:
+        ret+=x*(10**idx)
+        idx+=1
+    return ret
+
+def calc_fitness(score,time,shots,hits):
+    
+    score = to_int(score)
+    time = time[0] + (time[1]/60)
+    shots = to_int(shots)
+    hits =  to_int(hits)
+    
+    if shots == 0:
+        accuracy = 0
+    else:  
+        accuracy = hits/shots
+    
+    scor_weighted = (score/MAX_SCORE)*SCORE_WEIGHT
+    time_weighted = (1-(time/MAX_TIME))*TIME_WEIGHT
+    accu_weighted = (accuracy/MAX_ACCURACY)*ACCURACY_WEIGHT
+
+
+    fitness = scor_weighted + time_weighted + accu_weighted # max fitness = 1
+    
+    return fitness
+
 def press_buttons(game_instance, output, output_names):
     for out, name in zip(output,  output_names):
         if out:
@@ -27,15 +62,28 @@ def eval_genomes(genomes, config):
         genome.fitness = 4.0
         net = neat.nn.FeedForwardNetwork.create(genome, config)
         button_config = ["left", "right", "a"]
-        for x in range (500):
+        while pyboy.memory[0xcc80:0xcc81][0] != 1: # check if genome died
         #while pyboy.tick():
             pyboy.tick()
             flat_list = [item for sublist in pyboy.game_area() for item in sublist]
+            #time_elapsed = pyboy.memory[0xcc70:0xcc72]
+            lives = pyboy.memory[0xcc80:0xcc81]
+            #shot_count = pyboy.memory[0xcc84:0xcc86]
+            #kill_count = pyboy.memory[0xcc86:0xcc88]
+            #score = pyboy.memory[0xcc7a:0xcc7f]
+            #print(time_elapsed, shot_count, kill_count, score)
+            #print(lives)
             output = net.activate(flat_list)
             button_output = [round(x) for x in output]
             #print(button_output, ": ", genome_id)
             press_buttons(pyboy, button_output, button_config)
-
+        time_elapsed = pyboy.memory[0xcc70:0xcc72]
+        #lives = pyboy.memory[0xcc80:0xcc81]
+        shot_count = pyboy.memory[0xcc84:0xcc86]
+        kill_count = pyboy.memory[0xcc86:0xcc88]
+        score = pyboy.memory[0xcc7a:0xcc7f]
+        genome.fitness = calc_fitness(score, time_elapsed, shot_count,kill_count)
+        print(genome.fitness)
         pyboy.load_state(open('galaga.gb.state', 'rb'))
 
 
