@@ -1,7 +1,7 @@
 """
 2-input XOR example -- this is most likely the simplest possible example.
 """
-
+import multiprocessing
 import os
 from pyboy import PyBoy
 
@@ -9,7 +9,6 @@ import neat
 import visualize
 
 # 2-input XOR inputs and expected outputs.
-
 SCORE_WEIGHT = .3
 TIME_WEIGHT  = .5
 ACCURACY_WEIGHT = 100
@@ -37,9 +36,9 @@ def calc_fitness(score,time,shots,hits):
     score_weighted = score
     time_weighted = time * TIME_WEIGHT
     accu_weighted = accuracy*ACCURACY_WEIGHT
-    print(score)
-    print(time)
-    print(accuracy)
+    # print(score)
+    # print(time)
+    # print(accuracy)
 
 
     fitness = score_weighted + time_weighted + accu_weighted # max fitness = 1
@@ -53,39 +52,44 @@ def press_buttons(game_instance, output, output_names):
         else:
             game_instance.button_release(name)
 
-def eval_genomes(genomes, config):
-    
+def eval_genome(genome, config):
     pyboy = PyBoy("galaga.gb", window="null")
     pyboy.set_emulation_speed(0)
     pyboy.load_state(open('galaga.gb.state', 'rb'))
-    for genome_id, genome in genomes:
-        print("running genome:", genome_id)
-        genome.fitness = 4.0
-        net = neat.nn.FeedForwardNetwork.create(genome, config)
-        button_config = ["left", "right", "a"]
-        while pyboy.memory[0xcc80:0xcc81][0] != 1: # check if genome died
-        #while pyboy.tick():
-            pyboy.tick()
-            flat_list = [item for sublist in pyboy.game_area() for item in sublist]
-            #time_elapsed = pyboy.memory[0xcc70:0xcc72]
-            lives = pyboy.memory[0xcc80:0xcc81]
-            #shot_count = pyboy.memory[0xcc84:0xcc86]
-            #kill_count = pyboy.memory[0xcc86:0xcc88]
-            #score = pyboy.memory[0xcc7a:0xcc7f]
-            #print(time_elapsed, shot_count, kill_count, score)
-            #print(lives)
-            output = net.activate(flat_list)
-            button_output = [round(x) for x in output]
-            #print(button_output, ": ", genome_id)
-            press_buttons(pyboy, button_output, button_config)
-        time_elapsed = pyboy.memory[0xcc70:0xcc72]
-        #lives = pyboy.memory[0xcc80:0xcc81]
-        shot_count = pyboy.memory[0xcc84:0xcc86]
-        kill_count = pyboy.memory[0xcc86:0xcc88]
+    net = neat.nn.FeedForwardNetwork.create(genome, config)
+    button_config = ["left", "right", "a"]
+    idle_max = 1000
+    idle_count = idle_max
+    idle_score = -1
+    while pyboy.memory[0xcc80:0xcc81][0] != 1 and idle_count >= 0: # check if genome died
+    #while pyboy.tick():
+        pyboy.tick()
+        flat_list = [item for sublist in pyboy.game_area() for item in sublist]
+        #time_elapsed = pyboy.memory[0xcc70:0xcc72]
         score = pyboy.memory[0xcc7a:0xcc7f]
-        genome.fitness = calc_fitness(score, time_elapsed, shot_count,kill_count)
-        print(genome.fitness)
-        pyboy.load_state(open('galaga.gb.state', 'rb'))
+        if score == idle_score:
+            idle_count -= 1
+        else:
+            idle_score = score
+            idle_count = idle_max
+        #shot_count = pyboy.memory[0xcc84:0xcc86]
+        #kill_count = pyboy.memory[0xcc86:0xcc88]
+        #score = pyboy.memory[0xcc7a:0xcc7f]
+        #print(time_elapsed, shot_count, kill_count, score)
+        #print(lives)
+        output = net.activate(flat_list)
+        button_output = [round(x) for x in output]
+        #print(button_output, ": ", genome_id)
+        press_buttons(pyboy, button_output, button_config)
+    time_elapsed = pyboy.memory[0xcc70:0xcc72]
+    #lives = pyboy.memory[0xcc80:0xcc81]
+    shot_count = pyboy.memory[0xcc84:0xcc86]
+    kill_count = pyboy.memory[0xcc86:0xcc88]
+    score = pyboy.memory[0xcc7a:0xcc7f]
+    pyboy.stop()
+    fitness = calc_fitness(score, time_elapsed, shot_count,kill_count)
+    print(fitness)
+    return fitness
 
 
 def run(config_file):
@@ -104,7 +108,8 @@ def run(config_file):
     p.add_reporter(neat.Checkpointer(5))
 
     # Run for up to 300 generations.
-    winner = p.run(eval_genomes, 300)
+    pe = neat.ParallelEvaluator(multiprocessing.cpu_count(), eval_genome)
+    winner = p.run(pe.evaluate, 300)
 
     # Display the winning genome.
     print('\nBest genome:\n{!s}'.format(winner))
