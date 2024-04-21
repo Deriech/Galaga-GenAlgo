@@ -10,7 +10,7 @@ import visualize
 
 # 2-input XOR inputs and expected outputs.
 
-SCORE_WEIGHT = .3
+# SCORE_WEIGHT = .5
 TIME_WEIGHT  = .5
 ACCURACY_WEIGHT = 100
 
@@ -37,9 +37,9 @@ def calc_fitness(score,time,shots,hits):
     score_weighted = score
     time_weighted = time * TIME_WEIGHT
     accu_weighted = accuracy*ACCURACY_WEIGHT
-    print(score)
-    print(time)
-    print(accuracy)
+    # print(score)
+    # print(time)
+    # print(accuracy)
 
 
     fitness = score_weighted + time_weighted + accu_weighted # max fitness = 1

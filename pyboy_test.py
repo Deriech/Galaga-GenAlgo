@@ -7,44 +7,34 @@ import threading
 
 isfree = True
 
-pics = {}
-game_instances = {}
-buttons = {"1": [0,1,0], "2":[1,0,0]}
-def writepics(data, id):
+pics = []
+def writepics(data):
     global isfree
     if isfree:
         isfree = False
         global pics
-        pics[id] = data
+        pics = data
         isfree = True
 
-def readpics(id):
+def readpics():
     if isfree :
-        return pics[id]  
+        return pics 
     else:
         return None
-        
-def press_buttons(game_instance, id):
-            for idx, x in enumerate(buttons[id]):
-                if x:
-                    game_instance.button_press(button_config[idx])
-                else:
-                    game_instance.button_release(button_config[idx])
+
            
-def pyboy_stuff(id):
-    for x in range(5):
-            game_instances[str(x)] = PyBoy("galaga.gb")
-            with open('galaga.gb.state', 'rb') as f:
-                game_instances[str(x)].load_state(f)
-    while 1: 
-        for id, instance in game_instances.items():
-            instance.tick() 
-            if str(id) in buttons:
-                press_buttons(instance, id)
+def pyboy_stuff():
+    pyboy = PyBoy("galaga.gb")
+    print(pyboy.tilemap_window[0:32,0:32])
+    while pyboy.tick(): 
+            
+
+        writepics()
+    pyboy.stop()
             
 
 
-def tkinter_stuff(id):
+def tkinter_stuff():
     mult = 8
     WIDTH, HEIGHT = 32 * mult, 32 * mult
     window = Tk()
@@ -55,17 +45,15 @@ def tkinter_stuff(id):
     
     def update(img):
         try:
-            if id in pics:
-                game_area = np.array(readpics(id))
-                game_area = np.repeat(game_area,mult,axis=0)
-                game_area = np.repeat(game_area,mult,axis=1)
-                np.shape(game_area)
-                img = ImageTk.PhotoImage(image = Image.fromarray(game_area))
-                canvas.create_image(WIDTH/2, HEIGHT/2, image=img)
-            
-         
+            game_area = np.array(readpics())
+            game_area = np.repeat(game_area,mult,axis=0)
+            game_area = np.repeat(game_area,mult,axis=1)
+            np.shape(game_area)
+            img = ImageTk.PhotoImage(image = Image.fromarray(game_area))
+            canvas.create_image(WIDTH/2, HEIGHT/2, image=img)
+ 
         except Exception as e:
-            print("The error is: ", e.with_traceback())
+            #print("The error is: ", e.with_traceback(e.__traceback__))
             pass
         canvas.after(5, lambda : update(img))
     update(img)
@@ -73,19 +61,19 @@ def tkinter_stuff(id):
     
 
     
-t1 = threading.Thread(target=pyboy_stuff, args=("1"))
+t1 = threading.Thread(target=pyboy_stuff)
 # t2 = threading.Thread(target=pyboy_stuff, args=("2"))
-# t3 = threading.Thread(target=tkinter_stuff, args=("1"))
+t3 = threading.Thread(target=tkinter_stuff)
 # t4 = threading.Thread(target=tkinter_stuff, args=("2"))
 
 t1.start()
 # t2.start()
-# #t3.start()
+t3.start()
 # #t4.start()
 
 t1.join()
 # t2.join()
-# #t3.join()
+t3.join()
 # #t4.join()
 
 print("Done!")

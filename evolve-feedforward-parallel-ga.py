@@ -9,7 +9,7 @@ import neat
 import visualize
 
 # 2-input XOR inputs and expected outputs.
-SCORE_WEIGHT = .3
+# SCORE_WEIGHT = .5
 TIME_WEIGHT  = .5
 ACCURACY_WEIGHT = 100
 

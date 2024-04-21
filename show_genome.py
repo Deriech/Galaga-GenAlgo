@@ -19,11 +19,11 @@ config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
                          config_path)
 p = neat.Checkpointer.restore_checkpoint('neat-checkpoint-299')
-best_g = max([p for p in list(p.population.values()) if p.fitness != None], key= lambda p: p.fitness)
+best_g = sorted([p for p in list(p.population.values()) if p.fitness != None], key= lambda p: p.fitness, reverse=True)
 pyboy = PyBoy("galaga.gb")
 pyboy.set_emulation_speed(0)
 pyboy.load_state(open('galaga.gb.state', 'rb'))
-net = neat.nn.FeedForwardNetwork.create(best_g, config)
+net = neat.nn.FeedForwardNetwork.create(best_g[0], config)
 button_config = ["left", "right", "a"]
 while pyboy.tick():
     pyboy.tick()
