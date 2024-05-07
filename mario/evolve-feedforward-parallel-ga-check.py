@@ -8,6 +8,9 @@ from pyboy import PyBoy
 import neat
 import visualize
 
+# max stag = 4
+# pop size = 20
+
 # 2-input XOR inputs and expected outputs.
 # SCORE_WEIGHT = .5
 TIME_WEIGHT  = .5
@@ -39,9 +42,22 @@ def calc_fitness(score,time,shots,hits):
     # print(score)
     # print(time)
     # print(accuracy)
+    '''if(score>500):
+        score*=1.5
+    elif(score>1000):
+        score*=2
+    elif(score>2000):
+        score*=4
+    elif(score>3000):
+        score*=8
+    elif score>5000:
+        score*=10
+    elif score>8000:
+        score*=15'''
+    
 
 
-    fitness = score_weighted + time_weighted + accu_weighted # max fitness = 1
+    fitness = score*accuracy*(time/254)
     
     return fitness
 
@@ -53,44 +69,78 @@ def press_buttons(game_instance, output, output_names):
             game_instance.button_release(name)
 
 def eval_genome(genome, config):
-    show_window = False
-    window_setting  = "SDL2" if show_window else "null"
-    pyboy = PyBoy("galaga.gb", window=window_setting)
-    pyboy.set_emulation_speed(0)
-    pyboy.load_state(open('galaga.gb.state', 'rb'))
+    if(genome.fitness):
+        if(genome.fitness<2220):
+            print(genome.fitness)
+            return
+    else:return
+    pyboy = PyBoy("!mario.gb",)
+   # pyboy.set_emulation_speed(0)
+    pyboy.load_state(open('!mario.gb.state', 'rb'))
+
+    TIMEOUT_CONST = 30
+    #genome.fitness = 4.0
+
     net = neat.nn.FeedForwardNetwork.create(genome, config)
-    button_config = ["left", "right", "a"]
-    idle_max = 1000
-    idle_count = idle_max
-    idle_score = -1
-    while pyboy.memory[0xcc80:0xcc81][0] != 1 and idle_count >= 0: # check if genome died
+    button_config = ["left", "right", "a","b"]
+    disp = 0
+    last_dist = 0
+    dist2 = 0
+    jumps = 0
+    timeout = 30
+    level_progress = 0
+    while pyboy.memory[0xc0ac:0xc0ad][0] == 38: # check if genome died
     #while pyboy.tick():
         pyboy.tick()
         flat_list = [item for sublist in pyboy.game_area() for item in sublist]
-        #time_elapsed = pyboy.memory[0xcc70:0xcc72]
+        vel  = pyboy.memory[0xC20C:0xc20D][0]
+        dire = pyboy.memory[0xC20D:0xc20e][0]
+        dist = pyboy.memory[0xd113]
 
-        #shot_count = pyboy.memory[0xcc84:0xcc86]
-        #kill_count = pyboy.memory[0xcc86:0xcc88]
-        #score = pyboy.memory[0xcc7a:0xcc7f]
-        #print(time_elapsed, shot_count, kill_count, score)
-        #print(lives)
+        if (pyboy.memory[0xc0a4:0xc0a5][0] == 0x39):
+           break
+
+
+        
+        if(timeout<1):
+            break
+        
+        if(dist == last_dist):
+            timeout-=1
+        else:
+            timeout = 30
+
+
+        if(vel>6):
+            vel = 6
+        if(dist == last_dist):
+            dist2 = 0
+        else:
+            dist2 = 1
+        
+        if(dire&0x10):
+            dire = 1
+        elif dire & 0x20:
+            dire = -1
+        disp+= vel*dire*dist2 #+((~(pyboy.memory[0xc20a:0xc20b][0]))+2)*0.1
+        last_dist = dist
+
+        level_block = pyboy.memory[0xC0AB]
+        mario_x = pyboy.memory[0xC202]
+        scx = pyboy.screen.tilemap_position_list[16][0]
+        level_progress = level_block*16 + (scx-7) % 16 + mario_x
+
         output = net.activate(flat_list)
         button_output = [round(x) for x in output]
-        score = pyboy.memory[0xcc7a:0xcc7f]
-        if score == idle_score:
-            idle_count -= 1
-        else:
-            idle_score = score
-            idle_count = idle_max
         #print(button_output, ": ", genome_id)
         press_buttons(pyboy, button_output, button_config)
-    time_elapsed = pyboy.memory[0xcc70:0xcc72]
+    #time_elapsed = pyboy.memory[0xcc70:0xcc72]
     #lives = pyboy.memory[0xcc80:0xcc81]
-    shot_count = pyboy.memory[0xcc84:0xcc86]
-    kill_count = pyboy.memory[0xcc86:0xcc88]
-    score = pyboy.memory[0xcc7a:0xcc7f]
-    pyboy.stop(False)
-    fitness = calc_fitness(score, time_elapsed, shot_count,kill_count)
+    dist = pyboy.memory[0xc202:0xc203]
+
+    pyboy.stop()
+    score = to_int(pyboy.memory[0xc0a0:0xc0a2])
+    fitness = level_progress#disp#+to_int(pyboy.memory[0xc0a0:0xc0a3])
     print(fitness)
     return fitness
 
@@ -102,17 +152,22 @@ def run(config_file):
                          config_file)
 
     # Create the population, which is the top-level object for a NEAT run.
-    p = neat.Population(config)
+    p = neat.Checkpointer.restore_checkpoint('mario_para_NOJUMP_13464')#neat.Population(config)
 
     # Add a stdout reporter to show progress in the terminal.
     p.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
-    p.add_reporter(neat.Checkpointer(5, filename_prefix="checkpoints/neat-checkpoint-"))
+    p.add_reporter(neat.Checkpointer(1000,filename_prefix="para2/mario_para_NOJUMP_"))
+    import os
+    current_directory = os.getcwd()
+    final_directory = os.path.join(current_directory, r'para2')
+    if not os.path.exists(final_directory):
+        os.makedirs(final_directory)
 
     # Run for up to 300 generations.
     pe = neat.ParallelEvaluator(multiprocessing.cpu_count(), eval_genome)
-    winner = p.run(pe.evaluate, 300)
+    winner = p.run(pe.evaluate, 100000)
 
     # Display the winning genome.
     print('\nBest genome:\n{!s}'.format(winner))
@@ -139,5 +194,5 @@ if __name__ == '__main__':
     # here so that the script will run successfully regardless of the
     # current working directory.
     local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, 'config-feedforward-partial-ga')
+    config_path = os.path.join(local_dir, 'alt_conf')
     run(config_path)
