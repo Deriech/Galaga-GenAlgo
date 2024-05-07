@@ -24,14 +24,9 @@ def readpics():
 
            
 def pyboy_stuff():
-    pyboy = PyBoy("galaga.gb")
-    print(type(np.array(pyboy.tilemap_window[0:32,0:32])))
-    print(type(pyboy.game_area()))
+    pyboy = PyBoy("Galaga/galaga.gb")
     while pyboy.tick(): 
-        print(pyboy.game_area())
-
-
-        writepics(np.array(pyboy.tilemap_window[0:32,0:32]))
+        writepics(pyboy.game_area())
     pyboy.stop()
             
 

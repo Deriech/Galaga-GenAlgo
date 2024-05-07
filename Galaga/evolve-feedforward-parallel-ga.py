@@ -55,9 +55,9 @@ def press_buttons(game_instance, output, output_names):
 def eval_genome(genome, config):
     show_window = False
     window_setting  = "SDL2" if show_window else "null"
-    pyboy = PyBoy("galaga.gb", window=window_setting)
+    pyboy = PyBoy("roms/galaga.gb", window=window_setting)
     pyboy.set_emulation_speed(0)
-    pyboy.load_state(open('galaga.gb.state', 'rb'))
+    pyboy.load_state(open('roms/save_states/galaga.gb.state', 'rb'))
     net = neat.nn.FeedForwardNetwork.create(genome, config)
     button_config = ["left", "right", "a"]
     idle_max = 1000
@@ -108,7 +108,7 @@ def run(config_file):
     p.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
-    p.add_reporter(neat.Checkpointer(5, filename_prefix="checkpoints/neat-checkpoint-"))
+    p.add_reporter(neat.Checkpointer(5, filename_prefix="Galaga/checkpoints/neat-checkpoint-"))
 
     # Run for up to 300 generations.
     pe = neat.ParallelEvaluator(multiprocessing.cpu_count(), eval_genome)
