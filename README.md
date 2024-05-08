@@ -16,7 +16,8 @@ Genetic Algorithm(NEAT) solution to play galaga on the GameBoy
     pip install visualize
     pip install qt
     ```
-  * run the parallel GA python script in either the mario or the galage folders(evolve-feedforward-parallel-ga.py)
+  * run the parallel GA python script in either the mario or the galaga folders(evolve-feedforward-parallel-ga.py)
   * you should see output in the terminal regarding individual fitness and overall species fitness
+  * If these steps don't work, try doing these steps in WSL
 
 
