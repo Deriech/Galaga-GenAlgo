@@ -90,9 +90,9 @@ def press_buttons(game_instance, output, output_names):
 
 def eval_genomes(genomes, config):
     
-    pyboy = PyBoy("!mario.gb",)
+    pyboy = PyBoy("mario.gb",)
     #pyboy.set_emulation_speed(0)
-    pyboy.load_state(open('!mario.gb.state', 'rb'))
+    pyboy.load_state(open('mario.gb.state', 'rb'))
     for genome_id, genome in genomes:
         print("running genome:", genome_id)
         #genome.fitness = 4.0
@@ -173,7 +173,7 @@ def eval_genomes(genomes, config):
         time = to_int(pyboy.memory[0xda01:0xda03],byte=2)
         genome.fitness = level_progress# - time + speed_effect
         print(genome.fitness)
-        pyboy.load_state(open('!mario.gb.state', 'rb'))
+        pyboy.load_state(open('mario.gb.state', 'rb'))
 
 
 def run(config_file):
