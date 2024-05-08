@@ -7,6 +7,7 @@ Genetic Algorithm(NEAT) solution to play galaga on the GameBoy
 
 # Basic Setup
   * Download the project folder
+  * install conda and create an environment
   * install required libraries
     
     ```
