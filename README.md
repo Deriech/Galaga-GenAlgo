@@ -4,6 +4,7 @@ Genetic Algorithm(NEAT) solution to play galaga on the GameBoy
   * [PyBoy API](https://github.com/Baekalfen/PyBoy)
   * [Python Neat Algorithm Code](https://neat-python.readthedocs.io/en/latest/installation.html)
   * [Quick Github Markdown Tutorial (For making the readme)](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+  * [Link to this github repo](https://github.com/Deriech/Galaga-GenAlgo)
 
 # Basic Setup
   * Download the project folder
