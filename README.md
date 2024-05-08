@@ -6,8 +6,15 @@ Genetic Algorithm(NEAT) solution to play galaga on the GameBoy
   * [Python Neat Algorithm Code](https://neat-python.readthedocs.io/en/latest/neat_overview.html)
 # Basic Setup
   * Download the project folder
-  * install requirements pip install -r requirements.txt
-  * run the parallel GA python script (evolve-feedforward-parallel-ga.py or mario/evolve-feedforward-parallel-ga.py)
+  * install required libraries
+    
+    ```
+    pip install pyboy
+    pip install neat-python
+    pip install visualize
+    pip install qt
+    ```
+  * run the parallel GA python script in either the mario or the galage folders(evolve-feedforward-parallel-ga.py)
   * you should see output in the terminal regarding individual fitness and overall species fitness
 
 
